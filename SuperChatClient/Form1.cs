@@ -18,9 +18,11 @@ namespace SuperChatClient
     public partial class Form1 : Form
     {
         TcpClient client = null;
-        string UserName = string.Empty;
+        string userName = string.Empty;
         BinaryFormatter formatter = null;
         NetworkStream ns = null;
+        ChatData emptyRequest = null;
+
         public Form1()
         {
             InitializeComponent();
@@ -28,8 +30,17 @@ namespace SuperChatClient
             client = new TcpClient();
             formatter = new BinaryFormatter();
             btLogin.Enabled = false;
-            
-
+            emptyRequest = new ChatData()
+            {
+                FileName = string.Empty,
+                FromName = string.Empty,
+                Text = string.Empty,
+                Data = null,
+                Password = string.Empty,
+                ToName = string.Empty,
+                Command = "Sync"
+            };
+            timer.Start();
         }
 
         private void btConnect_Click(object sender, EventArgs e)
@@ -42,12 +53,25 @@ namespace SuperChatClient
             btConnect.Enabled = false;
         }
 
+        private void GetServerAnswer()
+        {
+            int size = client.ReceiveBufferSize;
+            byte[] buffer = new byte[size];
+            ns.Read(buffer, 0, size);
+
+            string chatHistory = Encoding.UTF8.GetString(buffer).Trim();
+            Invoke((MethodInvoker)delegate ()
+            {
+                tbChat.Text = chatHistory;
+            });
+        }
+
         private void btLogin_Click(object sender, EventArgs e)
         {
-            UserName = tbName.Text.Trim();
+            userName = tbName.Text.Trim();
             ChatData chatData = new ChatData()
             {
-                FromName = UserName,
+                FromName = userName,
                 ToName = string.Empty,
                 Text = string.Empty,
                 FileName = string.Empty,
@@ -60,19 +84,26 @@ namespace SuperChatClient
 
         private void SendMessage(ChatData chatData)
         {
-            try
+            if(ns != null)
             {
-                using (MemoryStream ms = new MemoryStream())
+                try
                 {
-                    formatter.Serialize(ms, chatData);
-                    ns.Write(ms.ToArray(), 0, (int)ms.Length);
-                    ns.Flush();
-                    tbMessage.Text = string.Empty;
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        formatter.Serialize(ms, chatData);
+                        ns.Write(ms.ToArray(), 0, (int)ms.Length);
+                        ns.Flush();
+
+                        if (chatData != emptyRequest)
+                        {
+                            tbMessage.Text = string.Empty;
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
             }
         }
         
@@ -90,7 +121,7 @@ namespace SuperChatClient
             }
             ChatData chatData = new ChatData()
             {
-                FromName = UserName,
+                FromName = userName,
                 ToName = string.Empty,
                 Text = tbMessage.Text,
                 FileName = string.Empty,
@@ -99,7 +130,6 @@ namespace SuperChatClient
                 Command = "Text"
             };
             SendMessage(chatData);
-
         }
 
         private void tbName_TextChanged(object sender, EventArgs e)
@@ -111,6 +141,19 @@ namespace SuperChatClient
             else
             {
                 btLogin.Enabled = true;
+            }
+        }
+
+        private async void timer_Tick(object sender, EventArgs e)
+        {
+            if (emptyRequest != null)
+            {
+                SendMessage(emptyRequest);
+            }
+            
+            if(ns != null)
+            {
+                await Task.Run(GetServerAnswer);
             }
         }
     }

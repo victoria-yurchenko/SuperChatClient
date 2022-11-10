@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "BFJdmCaqgxOu6fF9On69XwzC01gvfBKR/AtYE/LXHoL/GR2kXzCY30OukskH8brPlemIqQ/QeZnYWT+mNn6odA==",
+  "success": true,
+  "projectFilePath": "E:\\programming\\NetProgramming\\Chat\\SuperChatClient\\SuperChatClient\\SuperChatClient.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ACER\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\3.1.29\\microsoft.netcore.app.host.win-x64.3.1.29.nupkg.sha512"
+  ],
+  "logs": []
+}
